@@ -73,9 +73,15 @@ class PointNetFeat(nn.Module):
         # MLP layers (64, 64)
         # To achieve point-wise feature transform, let kernel size be 1.
         self.mlp1 = nn.Sequential(
-            nn.Conv1d(3, 64, 1),
+            # Convert each point's (x, y, z) 3D input to 64-dimensional features.
+            nn.Conv1d(3, 64, 1), # (B, 3, N) -> (B, 64, N)
             nn.BatchNorm1d(64),
             nn.ReLU(),
+
+            # Another transformation to refine the 64-dimensional features.
+            nn.Conv1d(64, 64, 1), # (B, 64, N) -> (B, 64, N)
+            nn.BatchNorm1d(64),
+            nn.ReLU()
         )
 
         # Feature Transform (T-Net 64x64)
@@ -84,9 +90,14 @@ class PointNetFeat(nn.Module):
 
         # MLP layers (64, 128, 1024)
         self.mlp2 = nn.Sequential(
+            # (B, 64, N) -> (B, 64, N) is not necessary, because it's already done in mlp1.
+
+            # Convert each point's 64-dimensional features to 128-dimensional features.
             nn.Conv1d(64, 128, 1),  #[B, 64, N] -> [B, 128, N]
             nn.BatchNorm1d(128),
             nn.ReLU(),
+
+            # Convert each point's 128-dimensional features to 1024-dimensional features.
             nn.Conv1d(128, 1024, 1), #[B, 128, N] -> [B, 1024, N]
             nn.BatchNorm1d(1024),
             nn.ReLU()
