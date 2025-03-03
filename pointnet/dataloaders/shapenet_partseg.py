@@ -46,7 +46,7 @@ class ShapeNetPartSegDataset(torch.utils.data.Dataset):
             os.makedirs(self.data_dir, exist_ok=True)
         if not osp.exists(self.shapenet_dir):
             # www = "https://shapenet.cs.stanford.edu/media/shapenet_part_seg_hdf5_data.zip"
-            www = "https://connectpolyu-my.sharepoint.com/:u:/g/personal/23096373d_connect_polyu_hk/ESMXzN2uhQNDs1KUs1-lK44BLWnAsSO-woIDFzvhjWqlIw?e=Lp2RcU"
+            www = "https://irl9ca.dm.files.1drv.com/y4mxhcxnXIkRYKvO4_iGfTiT4cfTbtOrp0SgT9EbSSeK5kHylx8q2lqhRgpelf3rXAoYkXjHBh6jTpwob--VuPv1_D8xNQYBFveDP_Bel7rT9u49CRhFEYSE6itsMIo4RWOn4eFaKWZupPKT7oOs8HGRFIwwK_Zdlth0VuJnU7QEyU_1t0o8ziFo4g4hJ_UToGr7agTBekgEAiQCyYPflmYyg"
             zipfile = osp.basename(www)
             os.system(f"wget --no-check-certificate {www}; unzip {zipfile}")
             os.system(f"mv hdf5_data {self.shapenet_dir}")
