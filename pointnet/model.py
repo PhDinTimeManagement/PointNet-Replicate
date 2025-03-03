@@ -120,9 +120,11 @@ class PointNetFeat(nn.Module):
 
         # (1) Input Transform
         if self.input_transform:
-            # stn3 returns a [B, 3, 3] transformation matrix.
-            trans_3x3 = self.stn3(pointcloud)
-            # Apply transform: [B, N, 3] x [B, 3, 3] -> [B, N, 3]
+            # Transpose the input point cloud to [B, 3, N] so stn3 sees 3 channels
+            pointcloud = pointcloud.transpose(2, 1) # [B, N, 3] -> [B, 3, N]
+            trans_3x3 = self.stn3(pointcloud) # stn3 forward pass -> [B, 3, 3]
+
+            # Multiply [B, N, 3] x [B, 3, 3] to transform to the original cloud
             pointcloud = torch.bmm(pointcloud, trans_3x3)
 
         # Reshape from [B, N, 3] to [B, 3, N] to use Conv1d as MLP
