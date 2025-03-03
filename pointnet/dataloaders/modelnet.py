@@ -56,7 +56,8 @@ class ModelNetDataset(torch.utils.data.Dataset):
         if not osp.exists(self.modelnet_dir):
             # www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
             # www = "https://onedrive.live.com/?authkey=%21ALKmMDfOhwxH43k&id=0CE615B143FC4BDC%21188223&cid=0CE615B143FC4BDC&parId=root&parQt=sharedby&o=OneUp"
-            www = "https://irl9ca.dm.files.1drv.com/y4mxhcxnXIkRYKvO4_iGfTiT4cfTbtOrp0SgT9EbSSeK5kHylx8q2lqhRgpelf3rXAoYkXjHBh6jTpwob--VuPv1_D8xNQYBFveDP_Bel7rT9u49CRhFEYSE6itsMIo4RWOn4eFaKWZupPKT7oOs8HGRFIwwK_Zdlth0VuJnU7QEyU_1t0o8ziFo4g4hJ_UToGr7agTBekgEAiQCyYPflmYyg"
+            # www = "https://irl9ca.dm.files.1drv.com/y4mxhcxnXIkRYKvO4_iGfTiT4cfTbtOrp0SgT9EbSSeK5kHylx8q2lqhRgpelf3rXAoYkXjHBh6jTpwob--VuPv1_D8xNQYBFveDP_Bel7rT9u49CRhFEYSE6itsMIo4RWOn4eFaKWZupPKT7oOs8HGRFIwwK_Zdlth0VuJnU7QEyU_1t0o8ziFo4g4hJ_UToGr7agTBekgEAiQCyYPflmYyg"
+            
             zipfile = osp.basename(www)
             os.system(f"wget --no-check-certificate {www}; unzip {zipfile}")
             os.system(f"mv {zipfile[:-4]} {self.data_dir}")
