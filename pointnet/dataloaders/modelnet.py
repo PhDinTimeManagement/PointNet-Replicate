@@ -31,11 +31,6 @@ class ModelNetDataset(torch.utils.data.Dataset):
             self.data.append(f["data"][:])
             self.label.append(f["label"][:])
             self.normal.append(f["normal"][:])
-            # if "normal" in f.keys():
-            #     self.normal.append(f["normal"][:])
-            # else:
-            #     print(f"Warning: 'normal' key not found in {fn}. Using zeros.")
-            #     self.normal.append(np.zeros_like(f["data"][:]))  # Ensure correct shape
 
         self.data = np.concatenate(self.data, 0).astype(np.float32)
         self.label = np.concatenate(self.label, 0).astype(np.int_)
@@ -56,7 +51,7 @@ class ModelNetDataset(torch.utils.data.Dataset):
         if not osp.exists(self.modelnet_dir):
             # www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
             # www = "https://onedrive.live.com/?authkey=%21ALKmMDfOhwxH43k&id=0CE615B143FC4BDC%21188223&cid=0CE615B143FC4BDC&parId=root&parQt=sharedby&o=OneUp"
-            www = "https://connectpolyu-my.sharepoint.com/personal/23096373d_connect_polyu_hk/_layouts/15/download.aspx?SourceUrl=%2Fpersonal%2F23096373d%5Fconnect%5Fpolyu%5Fhk%2FDocuments%2Fmodelnet40%5Fply%5Fhdf5%5F2048%2Ezip"
+            www = "https://drive.google.com/uc?export=download&id=1c2IzT_KsBvOrzwbGvHCUv9RzmtmaYjCR"
 
             zipfile = osp.basename(www)
             os.system(f"wget --no-check-certificate {www}; unzip {zipfile}")
