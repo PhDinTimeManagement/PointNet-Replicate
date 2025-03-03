@@ -121,8 +121,8 @@ class PointNetFeat(nn.Module):
         # (1) Input Transform
         if self.input_transform:
             # Transpose the input point cloud to [B, 3, N] so stn3 sees 3 channels
-            pointcloud = pointcloud.transpose(2, 1) # [B, N, 3] -> [B, 3, N]
-            trans_3x3 = self.stn3(pointcloud) # stn3 forward pass -> [B, 3, 3]
+            pc_for_tent = pointcloud.transpose(2, 1) # [B, N, 3] -> [B, 3, N]
+            trans_3x3 = self.stn3(pc_for_tent) # stn3 forward pass -> [B, 3, 3]
 
             # Multiply [B, N, 3] x [B, 3, 3] to transform to the original cloud
             pointcloud = torch.bmm(pointcloud, trans_3x3)
@@ -198,7 +198,7 @@ class PointNetCls(nn.Module):
         global_feature = self.pointnet_feat(pointcloud) # [B, 1024]
 
         # Compute logits for classification
-        logits = self.mlp_classifier(global_feature) # [B, num_classes]
+        logits = self.mlp(global_feature) # [B, num_classes]
 
         return logits
 
