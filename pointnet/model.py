@@ -135,11 +135,11 @@ class PointNetFeat(nn.Module):
         # (3) Feature Transform (if enabled)
         if self.feature_transform:
             # stn64 returns a [B, 64, 64] transformation matrix.
-            trand_64x64 = self.stn64(x)
+            trans_64x64 = self.stn64(x)
             # [B, 64, N] -> [B, N, 64]
             x = x.transpose(2, 1)
             # Apply transform: [B, N, 64] x [B, 64, 64] -> [B, N, 64]
-            x = torch.bmm(x, trand_64x64)
+            x = torch.bmm(x, trans_64x64)
             # Back to [B, 64, N]
             x = x.transpose(2, 1)
 
