@@ -15,30 +15,48 @@ import os.path as osp
 def step(points, pc_labels, class_labels, model):
     """
     Input : 
-        - points [B, N, 3]
-        - ground truth pc_labels [B, N]
-        - ground truth class_labels [B]
+        - points: [B, N, 3]
+        - ground truth pc_labels: [B, N] -> per-point ground truth
+        - ground truth class_labels [B] -> object class labels
     Output : loss
-        - loss []
+        - loss:  scalar
         - logits [B, C, N] (C: num_class)
         - preds [B, N]
     """
     
     # TODO : Implement step function for segmentation.
 
-    loss = None
-    logits = None
-    preds = None
+    points, pc_labels = points.to(device), pc_labels.to(device) # Send to device
+    class_labels = class_labels.to(device) # Possibly unused
+
+    # 1) Forward pass: get the model logits
+    logits = model(points) # Shape: [B, m, N]
+
+    # 2) Cross-entropy loss (per-point)
+    criterion = torch.nn.CrossEntropyLoss()
+    loss = criterion(logits, pc_labels) # [B, m, N] Vs. [B, N]
+
+    # 3) Per-point predictions
+    preds = logits.argmax(dim=1) # Shape: [B, N], select the index with the highest value
+
     return loss, logits, preds
 
 
 def train_step(points, pc_labels, class_labels, model, optimizer, train_acc_metric):
+    # 1) Forward pass, loss computation
     loss, logits, preds = step(
         points, pc_labels, class_labels, model
     )
+
+    # 2) Compute accuracy
     train_batch_acc = train_acc_metric(preds, pc_labels.to(device))
 
     # TODO : Implement backpropagation using optimizer and loss
+
+    # 3) Backpropagation
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
     return loss, train_batch_acc
 
