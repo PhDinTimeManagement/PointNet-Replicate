@@ -49,7 +49,8 @@ class ModelNetDataset(torch.utils.data.Dataset):
         if not osp.exists(self.data_dir):
             os.makedirs(self.data_dir, exist_ok=True)
         if not osp.exists(self.modelnet_dir):
-            www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
+            # www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
+            www = "https://onedrive.live.com/?authkey=%21ALKmMDfOhwxH43k&id=0CE615B143FC4BDC%21188223&cid=0CE615B143FC4BDC&parId=root&parQt=sharedby&o=OneUp"
             zipfile = osp.basename(www)
             os.system(f"wget --no-check-certificate {www}; unzip {zipfile}")
             os.system(f"mv {zipfile[:-4]} {self.data_dir}")
