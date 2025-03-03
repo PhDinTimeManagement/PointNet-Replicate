@@ -226,7 +226,7 @@ class PointNetPartSeg(nn.Module):
 
         # 2) MLP layers (3 -> 64 -> 64)
         self.mlp1 = nn.Sequential(
-            nn.Conv1d(64, 128, 1), # [B, 3, N] -> [B, 64, N]
+            nn.Conv1d(3, 64, 1), # [B, 3, N] -> [B, 64, N]
             nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Conv1d(64, 64, 1), # [B, 64, N] -> [B, 64, N]
