@@ -11,26 +11,60 @@ from utils.model_checkpoint import CheckpointManager
 
 def step(points, labels, model):
     """
+    Runs a forward pass and computes loss and predictions
+
     Input : 
-        - points [B, N, 3]
-        - ground truth labels [B]
-    Output : loss
-        - loss []
-        - preds [B]
+        - points: [B, N, 3] -> Input point cloud
+        - labels: [B] -> Ground truth labels
+    Output :
+        - loss: Scalar -> Cross-entropy classification loss
+        - preds: [B] -> Predicted class for each label
     """
     
     # TODO : Implement step function for classification.
 
-    loss = None
-    preds = None
+    points, labels = points.to(device), labels.to(device) # Send to device
+
+    # Forward pass: get the model logits
+    logits = model(points) # Shape: [B, num_classes]
+
+    # Compute the cross-entropy loss (classification loss)
+    criterion = torch.nn.CrossEntropyLoss()
+    loss = criterion(logits, labels) # Loss between predicted and ground truth labels
+
+    # Get the predicted class (highest logit value)
+    preds = torch.argmax(logits, dim=1) # Shape: [B], select the index with the highest value
+
     return loss, preds
 
 
 def train_step(points, labels, model, optimizer, train_acc_metric):
+    """
+        Performs one training step: Forward pass, loss computation, and backpropagation
+
+        Input :
+            - points: [B, N, 3] -> Input point cloud
+            - labels: [B] -> Ground truth labels
+            - model: PointNetCls -> PointNet Classification model
+            - optimizer: Adam, SGD, etc. -> Optimizer for updating model weights
+            - train_acc_metric: Accuracy -> Metric to track training accuracy
+        Output :
+            - loss: Scalar -> Loss value for this batch
+            - train_batch_acc: Scalar -> Training accuracy for this batch
+        """
+
+    # Compute loss and predictions
     loss, preds = step(points, labels, model)
+
+    # Compute accuracy
     train_batch_acc = train_acc_metric(preds, labels.to(device))
 
     # TODO : Implement backpropagation using optimizer and loss
+
+    # Bcckpropagation: Reset gradients, compute gradients, and update weights
+    optimizer.zero_grad() # Reset gradients
+    loss.backward() # Compute gradients
+    optimizer.step() # Update weights
 
     return loss, train_batch_acc
 
