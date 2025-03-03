@@ -158,21 +158,47 @@ class PointNetCls(nn.Module):
         self.num_classes = num_classes
         
         # extracts max-pooled features
+        # Feature extractor (produces 1024-dimensional global feature)
         self.pointnet_feat = PointNetFeat(input_transform, feature_transform)
         
         # returns the final logits from the max-pooled features.
         # TODO : Implement MLP that takes global feature as an input and return logits.
 
+        # Classification MLP (1024 -> 512 -> 256 -> num_classes)
+        self.mlp = nn.Sequential(
+            nn.Linear(1024, 512), # [B, 1024] -> [B, 512]
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 256), # [B, 512] -> [B, 256]
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+
+            nn.Dropout(0.3), # Dropout layer before the final layer
+
+            # Final logits layer
+            nn.Linear(256, num_classes) # [B, 256] -> [B, num_classes]
+        )
+
     def forward(self, pointcloud):
         """
         Input:
             - pointcloud [B,N,3]
+            - [batch, num_points, xyz]
         Output:
             - logits [B,num_classes]
-            - ...
+            - classifcation scores for each class
         """
+
         # TODO : Implement forward function.
-        pass
+
+        # Extract 1024-dimensional global feature
+        global_feature = self.pointnet_feat(pointcloud) # [B, 1024]
+
+        # Compute logits for classification
+        logits = self.mlp_classifier(global_feature) # [B, num_classes]
+
+        return logits
 
 
 class PointNetPartSeg(nn.Module):
