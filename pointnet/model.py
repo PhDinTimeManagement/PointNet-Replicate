@@ -1,3 +1,5 @@
+from hmac import trans_36
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -134,7 +136,7 @@ class PointNetFeat(nn.Module):
         # (2) First MLP layers (64, 64)
         x = self.mlp1(x) # [B, 3, N] -> [B, 64, N]
 
-        # (3) Feature Transform (if enabled)
+        # (3) Feature Transform
         if self.feature_transform:
             # stn64 returns a [B, 64, 64] transformation matrix.
             trans_64x64 = self.stn64(x)
@@ -204,23 +206,103 @@ class PointNetCls(nn.Module):
 
 
 class PointNetPartSeg(nn.Module):
+    """
+       PointNet for part segmentation
+       Outouts per-point logits of shape [B, n, N]
+       Combines local + global features:
+        - Local features: [B, 64, N]
+        - Global features: [B, 1024] (then repeated for each point)
+        => Concatenated features: [B, 1088, N]
+       Then use MLP maps 1088 -> 512 ->256 -> 128 -> m
+       """
     def __init__(self, m=50):
         super().__init__()
 
         # returns the logits for m part labels each point (m = # of parts = 50).
         # TODO: Implement part segmentation model based on PointNet Architecture.
-        pass
+
+        # 1) Input transform (T-Net 3x3)
+        self.stn3 = STNKd(k=3)
+
+        # 2) MLP layers (3 -> 64 -> 64)
+        self.mlp1 = nn.Sequential(
+            nn.Conv1d(64, 128, 1), # [B, 3, N] -> [B, 64, N]
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(64, 64, 1), # [B, 64, N] -> [B, 64, N]
+            nn.BatchNorm1d(64),
+            nn.ReLU()
+        )
+
+        # 3) Feature transform (T-Net 64x64)
+        self.stn64 = STNKd(k=64)
+
+        # 4) MLP layers (64 -> 128 -> 1024), this is used only for global features extraction
+        self.mlp2 = nn.Sequential(
+            nn.Conv1d(64, 128, 1), # [B, 64, N] -> [B, 128, N]
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(128, 1024, 1), # [B, 128, N] -> [B, 1024, N]
+            nn.BatchNorm1d(1024),
+            nn.ReLU()
+        )
+
+        # 5) Final Segmentation MLP (1088 -> 512 -> 256 -> 128 -> m)
+        self.mlp3 = nn.Sequential(
+            nn.Conv1d(1088, 512, 1), # [B, 1088, N] -> [B, 512, N]
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Conv1d(512, 256, 1), # [B, 512, N] -> [B, 256, N]
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Conv1d(256, 128, 1), # [B, 256, N] -> [B, 128, N]
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(128, m, 1) # [B, 128, N] -> [B, m, N]
+        )
 
     def forward(self, pointcloud):
         """
         Input:
-            - pointcloud: [B,N,3]
+            - pointcloud: [B,N,3] -> [batch, num_points, xyz]
         Output:
             - logits: [B,50,N] | 50: # of point labels
             - ...
         """
+
         # TODO: Implement forward function.
-        pass
+
+        B, N, _ = pointcloud.shape
+
+        # 1) Input transform (T-Net 3x3)
+        # T-Net expects [B, 3, N] input, we multiply with [B, N, 3]
+        pc_t = pointcloud.transpose(2, 1) # [B, N, 3] -> [B, 3, N]
+        trans_3x3 = self.stn3(pc_t) # [B, 3, N] -> [B, 3, 3]
+        pointcloud = torch.bmm(pointcloud, trans_3x3) # [B, N, 3] x [B, 3, 3] -> [B, N, 3]
+
+        # 2) First MLP layers for local features (64, 64)
+        x = pointcloud.transpose(2, 1) # [B, N, 3] -> [B, 3, N]
+        x = self.mlp1(x)
+
+        # 3) Feature transform (T-Net 64x64)
+        trans_64x64 = self.stn64(x) # [B, 64, N] -> [B, 64, 64]
+        x = x.transpose(2, 1) # [B, 64, N] -> [B, N, 64]
+        x = torch.bmm(x, trans_64x64) # [B, N, 64] x [B, 64, 64] -> [B, N, 64]
+        x = x.transpose(2, 1) # [B, N, 64] -> [B, 64, N]
+        local_feat = x # Save local features from this stage, [B, 64, N]
+
+        # 4) Second MLP layers for global features (64, 128, 1024)
+        x = self.mlp2(x) # [B, 64, N] -> [B, 1024, N]
+        global_feat = torch.max(x, 2)[0] # [B, 1024, N] -> [B, 1024]
+
+        # 5) Concatenate local and global features [B, 1088, N]
+        global_feat_expand = global_feat.unsqueeze(-1).repeat(1, 1, N) # [B, 1024] -> [B, 1024, N]
+        seg_input = torch.cat([local_feat, global_feat_expand], dim=1) # [B, 64, N] + [B, 1024, N] -> [B, 1088, N]
+
+        # 6) Final Segmentation MLP (1088 -> 512 -> 256 -> 128 -> m)
+        logits = self.mlp3(seg_input) # [B, 1088, N] -> [B, m, N]
+
+        return logits
 
 
 class PointNetAutoEncoder(nn.Module):
