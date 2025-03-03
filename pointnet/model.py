@@ -149,7 +149,6 @@ class PointNetFeat(nn.Module):
         # (5) Max Pooling
         global_feature = torch.max(x, 2)[0] # [B, 1024, N] -> [B, 1024]
 
-        # (6) Return global feature
         return global_feature # [B, 1024]
 
 
