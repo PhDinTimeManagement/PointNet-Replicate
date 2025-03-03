@@ -30,7 +30,12 @@ class ModelNetDataset(torch.utils.data.Dataset):
             f = h5py.File(osp.join(self.modelnet_dir, osp.basename(fn)))
             self.data.append(f["data"][:])
             self.label.append(f["label"][:])
-            self.normal.append(f["normal"][:])
+            # self.normal.append(f["normal"][:])
+            if "normal" in f.keys():
+                self.normal.append(f["normal"][:])
+            else:
+                print(f"Warning: 'normal' key not found in {fn}. Using zeros.")
+                self.normal.append(np.zeros_like(f["data"][:]))  # Ensure correct shape
 
         self.data = np.concatenate(self.data, 0).astype(np.float32)
         self.label = np.concatenate(self.label, 0).astype(np.int_)
