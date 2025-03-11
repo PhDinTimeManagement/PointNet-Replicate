@@ -313,6 +313,31 @@ class PointNetAutoEncoder(nn.Module):
         # Decoder is just a simple MLP that outputs N x 3 (x,y,z) coordinates.
         # TODO : Implement decoder.
 
+        # Simple MLP from 1024 -> N*3
+        # E.g. If N = 2048, then output shape is [B, 2048*3]
+        self.num_points = num_points
+
+        self.decoder = nn.Sequential(
+            # Fully-connected (1024, N/4) -> BatchNorm -> ReLU
+            # Fully-connected (N/4, N/2) -> BatchNorm -> ReLU
+            # Fully-connected (N/2, N) -> Dropout -> BatchNorm -> ReLU
+            # Fully-connected (N, N*3)
+            nn.Linear(1024, num_points // 4),
+            nn.BatchNorm1d(num_points // 4),
+            nn.ReLU(),
+
+            nn.Linear(num_points // 4, num_points // 2),
+            nn.BatchNorm1d(num_points // 2),
+            nn.ReLU(),
+
+            nn.Linear(num_points // 2, num_points),
+            nn.Dropout(0.3),
+            nn.BatchNorm1d(num_points),
+            nn.ReLU(),
+
+            nn.Linear(num_points, num_points * 3)
+        )
+
     def forward(self, pointcloud):
         """
         Input:
@@ -322,7 +347,17 @@ class PointNetAutoEncoder(nn.Module):
             - ...
         """
         # TODO : Implement forward function.
-        pass
+
+        # 1) Encoder => global feature extraction
+        global_feat = self.pointnet_feat(pointcloud) # Shape: [B, 1024]
+
+        # 2) Decoder => reconstruct the point cloud
+        decoded = self.decoder(global_feat) # Shape: [B, N*3]
+
+        # 3) Reshape the decoded tensor to [B, N, 3]
+        recon_pts = decoded.view(-1, self.num_points, 3) # Shape: [B, N, 3]
+
+        return recon_pts
 
 
 def get_orthogonal_loss(feat_trans, reg_weight=1e-3):
